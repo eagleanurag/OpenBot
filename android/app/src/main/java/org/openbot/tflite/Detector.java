@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Wrapper for frozen detection models trained using the Tensorflow Object Detection API:
@@ -48,13 +49,13 @@ public abstract class Detector extends Network {
    */
   public static Detector create(Activity activity, Model model, Device device, int numThreads)
       throws IOException {
-    switch (model) {
+    switch (model.id) {
       case DETECTOR_V1_1_0_Q:
-        return new DetectorQuantizedMobileNetV1(activity, device, numThreads);
+        return new DetectorQuantizedMobileNetV1(activity, model, device, numThreads);
       case DETECTOR_V3_S_Q:
-        return new DetectorQuantizedMobileNetV3(activity, device, numThreads);
+        return new DetectorQuantizedMobileNetV3(activity, model, device, numThreads);
       default:
-        return new DetectorQuantizedMobileNetV1(activity, device, numThreads);
+        return new DetectorQuantizedMobileNetV1(activity, model, device, numThreads);
     }
   }
 
@@ -117,7 +118,7 @@ public abstract class Detector extends Network {
       }
 
       if (confidence != null) {
-        resultString += String.format("(%.1f%%) ", confidence * 100.0f);
+        resultString += String.format(Locale.US, "(%.1f%%) ", confidence * 100.0f);
       }
 
       if (location != null) {
@@ -129,8 +130,9 @@ public abstract class Detector extends Network {
   }
 
   /** Initializes a {@code Detector}. */
-  protected Detector(Activity activity, Device device, int numThreads) throws IOException {
-    super(activity, device, numThreads);
+  protected Detector(Activity activity, Model model, Device device, int numThreads)
+      throws IOException {
+    super(activity, model, device, numThreads);
     labels = loadLabelList(activity);
     LOGGER.d("Created a Tensorflow Lite Detector.");
   }
@@ -163,10 +165,10 @@ public abstract class Detector extends Network {
 
     // Run the inference call.
     Trace.beginSection("runInference");
-    long startTime = SystemClock.uptimeMillis();
+    long startTime = SystemClock.elapsedRealtime();
     runInference();
     // tflite.runForMultipleInputsOutputs(inputArray, outputMap);
-    long endTime = SystemClock.uptimeMillis();
+    long endTime = SystemClock.elapsedRealtime();
     Trace.endSection();
     LOGGER.v("Timecost to run model inference: " + (endTime - startTime));
 
